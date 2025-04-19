@@ -26,10 +26,9 @@ export interface SolveResponse {
 
 export async function solveMaze(request: SolveRequest): Promise<SolveResponse> {
   try {
-    const response = await fetch(`${API_URL}/solve`, {
+    const response = await fetch(`/api/proxy/solve`, {
       method: 'POST',
       headers: {
-        'ngrok-skip-browser-warning': 'true',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
