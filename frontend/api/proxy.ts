@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const targetUrl = `http://http://3.147.27.202/:8000${req.url?.replace('/api/proxy', '') || ''}`;
+    const targetUrl = `http://http://3.147.27.202:8000${req.url?.replace('/api/proxy', '') || ''}`;
     
     const response = await fetch(targetUrl, {
       method: req.method,
