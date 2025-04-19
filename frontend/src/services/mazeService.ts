@@ -1,6 +1,6 @@
 import { Pair } from '../helpers/types';
 
-const API_URL = 'https://3be4-3-147-27-202.ngrok-free.app:8000';
+const API_URL = 'https://4707-3-147-27-202.ngrok-free.app:8000';
 
 export interface SolveRequest {
   start: [number, number];
@@ -29,6 +29,7 @@ export async function solveMaze(request: SolveRequest): Promise<SolveResponse> {
     const response = await fetch(`${API_URL}/solve`, {
       method: 'POST',
       headers: {
+        'ngrok-skip-browser-warning': 'true',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
