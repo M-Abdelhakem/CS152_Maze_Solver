@@ -1,0 +1,469 @@
+import {
+  DEFAULT_SIZE,
+  MAX_SIZE,
+  PATH_COLOR,
+  TARGET_LOCATION_COLOR,
+  VISITED_CELL_COLOR,
+} from "./constants"
+import {
+  Pair,
+  sleep,
+} from "./helpers"
+import { make2dArray } from "./helpers"
+import "./style.css"
+import { solveMaze } from './services/mazeService';
+
+let grid = document.getElementById("grid"),
+  select = document.getElementById("mode"),
+  algorithmSelectBox = document.getElementById("algorithm"),
+  startBtn = document.getElementById("start")
+
+let mode: "blocks" | "target" | "location" = "blocks",
+  algorithm: "bfs" | "dfs" | "dijkstra" | "astar" | "iterative_deepening" | "bidirectional" = "bfs"
+
+function main(size = DEFAULT_SIZE) {
+  const blocks = make2dArray(size, false)
+  let isSolved = false
+
+  grid!.style.gridTemplateColumns = `repeat(${size}, 1fr)`
+
+  let target = new Pair(size - 1, size - 1),
+    location = new Pair(0, 0)
+
+  // Create metrics display element
+  const metricsDisplay = document.createElement('div');
+  metricsDisplay.id = 'metrics-display';
+  metricsDisplay.className = 'mt-8 p-4 bg-white border border-gray-300 rounded-lg shadow-md hidden w-full';
+  metricsDisplay.innerHTML = `
+    <div class="max-w-4xl mx-auto">
+      <h3 class="text-xl font-bold mb-2">Algorithm Performance Metrics</h3>
+      
+      <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+        <h4 class="font-semibold text-blue-800">Algorithm Complexity</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+          <div>
+            <p class="font-medium text-blue-700">Time Complexity:</p>
+            <p id="time-complexity" class="text-sm">O(n) where n is the number of cells</p>
+            <p class="text-xs text-gray-500">Theoretical worst-case time to find a path</p>
+          </div>
+          <div>
+            <p class="font-medium text-blue-700">Space Complexity:</p>
+            <p id="space-complexity" class="text-sm">O(n) where n is the number of cells</p>
+            <p class="text-xs text-gray-500">Maximum memory required during execution</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="font-semibold text-gray-700">Explored Cells</p>
+          <p class="text-2xl font-bold text-blue-600"><span id="explored-size">0</span></p>
+          <p class="text-xs text-gray-500">Total unique cells visited during search</p>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="font-semibold text-gray-700">Frontier Size</p>
+          <p class="text-2xl font-bold text-green-600"><span id="frontier-size">0</span></p>
+          <p class="text-xs text-gray-500">Cells waiting to be explored at end of search</p>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="font-semibold text-gray-700">Time Taken</p>
+          <p class="text-2xl font-bold text-purple-600"><span id="time-taken">0</span> ms</p>
+          <p class="text-xs text-gray-500">Actual execution time in milliseconds</p>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="font-semibold text-gray-700">Path Length</p>
+          <p class="text-2xl font-bold text-red-600"><span id="path-length">0</span></p>
+          <p class="text-xs text-gray-500">Number of steps in the found path</p>
+        </div>
+      </div>
+      <div class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="font-semibold text-gray-700">Exploration Efficiency</p>
+          <p class="text-2xl font-bold text-indigo-600"><span id="exploration-efficiency">0</span></p>
+          <p class="text-xs text-gray-500">Ratio of explored cells to path length (lower is better)</p>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="font-semibold text-gray-700">Memory Usage</p>
+          <p class="text-2xl font-bold text-amber-600"><span id="memory-usage">0</span></p>
+          <p class="text-xs text-gray-500">Total cells stored (frontier + explored)</p>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="font-semibold text-gray-700">Time Efficiency</p>
+          <p class="text-2xl font-bold text-teal-600"><span id="time-efficiency">0</span></p>
+          <p class="text-xs text-gray-500">Milliseconds per path step (lower is better)</p>
+        </div>
+      </div>
+      <div class="mt-3 text-xs text-gray-500 italic">
+        <p>Note: Lower values for Exploration Efficiency and Time Efficiency indicate better performance.</p>
+      </div>
+    </div>
+  `;
+  
+  // Create a container for the maze and options
+  const mazeContainer = document.createElement('div');
+  mazeContainer.className = 'flex flex-col md:flex-row gap-4 mb-8';
+  
+  // Move the grid and options into the container
+  const optionsContainer = document.getElementById('options')!;
+  mazeContainer.appendChild(optionsContainer);
+  mazeContainer.appendChild(grid!);
+  
+  // Clear the app container and add the new structure
+  const appContainer = document.getElementById('app')!;
+  appContainer.innerHTML = '';
+  appContainer.appendChild(mazeContainer);
+  appContainer.appendChild(metricsDisplay);
+
+  function render() {
+    grid!.innerHTML = ""
+    grid!.style.gridTemplateColumns = `repeat(${size}, 1fr)`
+    
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        const isLocation = location.first === i && location.second === j
+        const isTarget = target.first === i && target.second === j
+
+        grid!.innerHTML += `
+          <button id="c-${i}-${j}" i="${i}" j="${j}" class="cell ${
+          blocks[i][j] ? "blocked" : ""
+        }" style="background: ${
+          isLocation || isTarget ? TARGET_LOCATION_COLOR : ""
+        }">
+            ${isLocation ? "A" : isTarget ? "B" : ""}
+          </button>
+        `
+      }
+    }
+    
+    let isMouseDown = false
+
+    document.addEventListener("mousedown", () => {
+      isMouseDown = true
+    })
+
+    document.addEventListener("mouseup", () => {
+      isMouseDown = false
+    })
+
+    document.querySelectorAll(".cell").forEach((cell) => {
+      cell.addEventListener("click", () => {
+        if (isSolved) {
+          render()
+          isSolved = false
+        }
+
+        const i = +cell.getAttribute("i")!,
+          j = +cell.getAttribute("j")!
+
+        // preventing collision with target and location positions
+        if (
+          mode === "blocks" &&
+          (location.first !== i || location.second !== j) &&
+          (target.first !== i || target.second !== j)
+        ) {
+          blocks[i][j] = !blocks[i][j]
+          if (blocks[i][j])
+            document.getElementById(`c-${i}-${j}`)!.classList.add("blocked")
+          else
+            document.getElementById(`c-${i}-${j}`)!.classList.remove("blocked")
+        }
+
+        // preventing collision with blocks and target positions
+        if (
+          mode === "location" &&
+          !blocks[i][j] &&
+          (target.first !== i || target.second !== j)
+        ) {
+          document.getElementById(
+            `c-${location.first}-${location.second}`
+          )!.style.backgroundColor = "white"
+          document.getElementById(
+            `c-${location.first}-${location.second}`
+          )!.innerText = ""
+          location.first = i
+          location.second = j
+          document.getElementById(
+            `c-${location.first}-${location.second}`
+          )!.style.backgroundColor = TARGET_LOCATION_COLOR
+          document.getElementById(
+            `c-${location.first}-${location.second}`
+          )!.innerText = "A"
+        }
+
+        // preventing collision with blocks and location positions
+        if (
+          mode === "target" &&
+          !blocks[i][j] &&
+          (location.first !== i || location.second !== j)
+        ) {
+          document.getElementById(
+            `c-${target.first}-${target.second}`
+          )!.style.backgroundColor = "white"
+          document.getElementById(
+            `c-${target.first}-${target.second}`
+          )!.innerText = ""
+          target.first = i
+          target.second = j
+          document.getElementById(
+            `c-${target.first}-${target.second}`
+          )!.style.backgroundColor = TARGET_LOCATION_COLOR
+          document.getElementById(
+            `c-${target.first}-${target.second}`
+          )!.innerText = "B"
+        }
+      })
+      cell.addEventListener("mouseover", () => {
+        if (!isMouseDown) return
+        if (isSolved) {
+          render()
+          isSolved = false
+        }
+
+        const i = +cell.getAttribute("i")!,
+          j = +cell.getAttribute("j")!
+
+        if (
+          mode === "blocks" &&
+          (location.first !== i || location.second !== j) &&
+          (target.first !== i || target.second !== j)
+        ) {
+          blocks[i][j] = !blocks[i][j]
+          if (blocks[i][j])
+            document.getElementById(`c-${i}-${j}`)!.classList.add("blocked")
+          else
+            document.getElementById(`c-${i}-${j}`)!.classList.remove("blocked")
+        }
+      })
+      cell.addEventListener("mousedown", () => {
+        if (isSolved) {
+          render()
+          isSolved = false
+        }
+
+        const i = +cell.getAttribute("i")!,
+          j = +cell.getAttribute("j")!
+
+        if (
+          mode === "blocks" &&
+          (location.first !== i || location.second !== j) &&
+          (target.first !== i || target.second !== j)
+        ) {
+          blocks[i][j] = !blocks[i][j]
+          if (blocks[i][j])
+            document.getElementById(`c-${i}-${j}`)!.classList.add("blocked")
+          else
+            document.getElementById(`c-${i}-${j}`)!.classList.remove("blocked")
+        }
+      })
+      cell.addEventListener("mouseup", () => {
+        if (isSolved) {
+          render()
+          isSolved = false
+        }
+
+        const i = +cell.getAttribute("i")!,
+          j = +cell.getAttribute("j")!
+
+        if (
+          mode === "blocks" &&
+          (location.first !== i || location.second !== j) &&
+          (target.first !== i || target.second !== j)
+        ) {
+          blocks[i][j] = !blocks[i][j]
+          if (blocks[i][j])
+            document.getElementById(`c-${i}-${j}`)!.classList.add("blocked")
+          else
+            document.getElementById(`c-${i}-${j}`)!.classList.remove("blocked")
+        }
+      })
+    })
+  }
+
+  select!.addEventListener("change", () => {
+    mode = (<HTMLSelectElement>document.getElementById("mode")).value as
+      | "blocks"
+      | "target"
+      | "location"
+  })
+
+  algorithmSelectBox!.addEventListener("change", () => {
+    algorithm = (<HTMLSelectElement>algorithmSelectBox).value as
+      | "bfs"
+      | "dfs"
+      | "dijkstra"
+      | "astar"
+      | "iterative_deepening"
+      | "bidirectional"
+
+    // show the a* options and remove them if not selected
+    if (algorithm === "astar") {
+      document.querySelector("#heuristic")!.classList.remove("hidden")
+      document.querySelector("#heuristic-label")!.classList.remove("hidden")
+    } else {
+      document.querySelector("#heuristic")!.classList.add("hidden")
+      document.querySelector("#heuristic-label")!.classList.add("hidden")
+    }
+  })
+
+  startBtn?.addEventListener("click", async () => {
+    isSolved = true
+    render()
+
+    const directions = +(<HTMLSelectElement>(
+      document.getElementById("directions")
+    )).value
+
+    const algorithm = (<HTMLSelectElement>algorithmSelectBox).value
+    const heuristicType = +(<HTMLSelectElement>document.getElementById("heuristic")).value
+
+    const request = {
+      start: [location.first, location.second] as [number, number],
+      end: [target.first, target.second] as [number, number],
+      blocks: blocks,
+      size: size,
+      directions: directions,
+      algorithm: algorithm,
+      heuristic_type: heuristicType
+    };
+
+    const response = await solveMaze(request);
+    
+    if (response.error) {
+      console.error('Error:', response.error);
+      return;
+    }
+
+    // First, visualize the exploration process
+    for (const [x, y] of response.exploration_order) {
+      if (x !== location.first || y !== location.second) {
+        if (x !== target.first || y !== target.second) {
+          await sleep(10);
+          document.getElementById(`c-${x}-${y}`)!.style.backgroundColor = VISITED_CELL_COLOR;
+        }
+      }
+    }
+
+    // Then, visualize the final path
+    if (response.path) {
+      for (const [x, y] of response.path) {
+        if (x !== location.first || y !== location.second) {
+          if (x !== target.first || y !== target.second) {
+            await sleep(10);
+            document.getElementById(`c-${x}-${y}`)!.style.backgroundColor = PATH_COLOR;
+          }
+        }
+      }
+    }
+    
+    // Display metrics
+    document.getElementById('metrics-display')!.classList.remove('hidden');
+    
+    // Ensure all metrics are properly initialized
+    const metrics = {
+      explored_size: response.metrics.explored_size || 0,
+      frontier_size: response.metrics.frontier_size || 0,
+      time_taken_ms: response.metrics.time_taken_ms || 0,
+      path_length: response.metrics.path_length || 0
+    };
+    
+    // Update basic metrics
+    document.getElementById('explored-size')!.textContent = metrics.explored_size.toString();
+    document.getElementById('frontier-size')!.textContent = metrics.frontier_size.toString();
+    document.getElementById('time-taken')!.textContent = metrics.time_taken_ms.toFixed(2);
+    document.getElementById('path-length')!.textContent = metrics.path_length.toString();
+    
+    // Calculate additional metrics with proper error handling
+    const explorationEfficiency = metrics.path_length > 0 
+      ? (metrics.explored_size / metrics.path_length).toFixed(2) 
+      : '0';
+    document.getElementById('exploration-efficiency')!.textContent = explorationEfficiency;
+    
+    const memoryUsage = metrics.explored_size + metrics.frontier_size;
+    document.getElementById('memory-usage')!.textContent = memoryUsage.toString();
+    
+    const timeEfficiency = metrics.path_length > 0 
+      ? (metrics.time_taken_ms / metrics.path_length).toFixed(2) 
+      : '0';
+    document.getElementById('time-efficiency')!.textContent = timeEfficiency;
+    
+    // Set algorithm complexity information with detailed explanations
+    let timeComplexity = '';
+    let spaceComplexity = '';
+    
+    switch(algorithm) {
+      case 'bfs':
+        timeComplexity = 'O(n) where n is the number of cells';
+        spaceComplexity = 'O(n) where n is the number of cells';
+        break;
+      case 'dfs':
+        timeComplexity = 'O(n) where n is the number of cells';
+        spaceComplexity = 'O(h) where h is the maximum depth of the recursion';
+        break;
+      case 'dijkstra':
+        timeComplexity = 'O(n log n) where n is the number of cells';
+        spaceComplexity = 'O(n) where n is the number of cells';
+        break;
+      case 'astar':
+        timeComplexity = 'O(n log n) where n is the number of cells';
+        spaceComplexity = 'O(n) where n is the number of cells';
+        break;
+      case 'iterative_deepening':
+        timeComplexity = 'O(b^d) where b is branching factor and d is depth';
+        spaceComplexity = 'O(d) where d is the depth of the solution';
+        break;
+      case 'bidirectional':
+        timeComplexity = 'O(n) where n is the number of cells';
+        spaceComplexity = 'O(n) where n is the number of cells';
+        break;
+    }
+    
+    document.getElementById('time-complexity')!.textContent = timeComplexity;
+    document.getElementById('space-complexity')!.textContent = spaceComplexity;
+    
+    // Add tooltips with explanations
+    const tooltips = {
+      'exploration-efficiency': 'Lower values indicate better exploration efficiency (fewer cells explored per path length)',
+      'time-efficiency': 'Lower values indicate better time efficiency (less time taken per path length)',
+      'memory-usage': 'Total number of cells stored in memory during the search',
+      'explored-size': 'Number of cells visited during the search',
+      'frontier-size': 'Number of cells waiting to be explored',
+      'time-taken': 'Time taken to find the path in milliseconds',
+      'path-length': 'Length of the found path'
+    };
+    
+    // Add tooltips to each metric
+    Object.entries(tooltips).forEach(([id, tooltip]) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.title = tooltip;
+      }
+    });
+    
+    // Scroll to metrics
+    metricsDisplay.scrollIntoView({ behavior: 'smooth' });
+  })
+
+  render()
+}
+
+main(DEFAULT_SIZE)
+
+function syncSizeForm() {
+  const input = <HTMLInputElement>document.getElementById("size")
+  input.value = DEFAULT_SIZE.toString()
+  input.max = MAX_SIZE.toString()
+
+  document.getElementById("form")?.addEventListener("submit", (e) => {
+    e.preventDefault()
+    const sizeInput = (<HTMLInputElement>document.getElementById("size")).value
+
+    // recreate the button to remove event listeners
+    let newBtn = startBtn!.cloneNode(true)
+    startBtn!.parentNode!.replaceChild(newBtn, startBtn!)
+    startBtn = newBtn as HTMLElement
+
+    main(+sizeInput)
+  })
+}
+
+syncSizeForm()
