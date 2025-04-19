@@ -1,6 +1,6 @@
 import { Pair } from '../helpers/types';
 
-const API_URL = 'http://3.147.27.202:8000';
+const API_URL = 'https://3be4-3-147-27-202.ngrok-free.app:8000';
 
 export interface SolveRequest {
   start: [number, number];
