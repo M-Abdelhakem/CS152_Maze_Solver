@@ -21,7 +21,8 @@ const algorithmNames: { [key: string]: string } = {
   'astar': 'A*',
   'iterative_deepening': 'IDDFS',
   'bidirectional': 'Bidirectional',
-  'local_beam': 'Local Beam'
+  'local_beam': 'Local Beam',
+  'rrt': 'RRT'
 };
 
 let grid = document.getElementById("grid"),
@@ -30,7 +31,7 @@ let grid = document.getElementById("grid"),
   startBtn = document.getElementById("start")
 
 let mode: "blocks" | "target" | "location" = "blocks",
-  algorithm: "bfs" | "dfs" | "dijkstra" | "astar" | "iterative_deepening" | "bidirectional" | "local_beam" = "bfs"
+  algorithm: "bfs" | "dfs" | "dijkstra" | "astar" | "iterative_deepening" | "bidirectional" | "local_beam" | "rrt" = "bfs"
 
 function main(size = DEFAULT_SIZE) {
   const blocks = make2dArray(size, false)
@@ -306,6 +307,7 @@ function main(size = DEFAULT_SIZE) {
       | "iterative_deepening"
       | "bidirectional"
       | "local_beam"
+      | "rrt"
 
     // show the a* options and remove them if not selected
     if (algorithm === "astar") {
@@ -477,6 +479,10 @@ function main(size = DEFAULT_SIZE) {
       case 'local_beam':
         timeComplexity = 'O(b * w * d) where b is beam width, w is width of maze, d is depth';
         spaceComplexity = 'O(b * w) where b is beam width, w is width of maze';
+        break;
+      case 'rrt':
+        timeComplexity = 'O(n log n) where n is the number of nodes in the tree';
+        spaceComplexity = 'O(n) where n is the number of nodes in the tree';
         break;
     }
     
