@@ -25,11 +25,12 @@ def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direction
     pq = PriorityQueue()
     pq.put(PriorityQueueItem(0, start))
     g_score[start.first][start.second] = 0
-    f_score[start.first][start.second] = get_heuristic(start, end, heuristic_type)
+    heuristic_func = get_heuristic(heuristic_type)
+    f_score[start.first][start.second] = heuristic_func(start, end)
     exploration_order = [[start.first, start.second]]
     
     while not pq.empty():
-        current = pq.get().position
+        current = pq.get().item
         
         if current.first == end.first and current.second == end.second:
             # Reconstruct path
@@ -68,7 +69,7 @@ def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direction
                 if tentative_g_score < g_score[neighbor.first][neighbor.second]:
                     parent[neighbor.first][neighbor.second] = current
                     g_score[neighbor.first][neighbor.second] = tentative_g_score
-                    f_score[neighbor.first][neighbor.second] = g_score[neighbor.first][neighbor.second] + get_heuristic(neighbor, end, heuristic_type)
+                    f_score[neighbor.first][neighbor.second] = g_score[neighbor.first][neighbor.second] + heuristic_func(neighbor, end)
                     pq.put(PriorityQueueItem(f_score[neighbor.first][neighbor.second], neighbor))
     
     # Calculate metrics for no path found

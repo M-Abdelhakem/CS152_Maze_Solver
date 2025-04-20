@@ -27,7 +27,7 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
     exploration_order = [[start.first, start.second]]
     
     while not pq.empty():
-        current = pq.get().position
+        current = pq.get().item
         
         if current.first == end.first and current.second == end.second:
             # Reconstruct path
