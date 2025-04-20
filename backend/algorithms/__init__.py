@@ -4,6 +4,7 @@ from .dijkstra import dijkstra
 from .astar import astar
 from .iterative_deepening import iterative_deepening
 from .bidirectional import bidirectional_search
+from .local_beam import local_beam_search
 
 __all__ = [
     'bfs',
@@ -11,5 +12,6 @@ __all__ = [
     'dijkstra',
     'astar',
     'iterative_deepening',
-    'bidirectional_search'
+    'bidirectional_search',
+    'local_beam_search'
 ] 

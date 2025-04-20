@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from maze_solver import Pair, bfs, dfs, dijkstra, astar, iterative_deepening, bidirectional_search
+from maze_solver import Pair, bfs, dfs, dijkstra, astar, iterative_deepening, bidirectional_search, local_beam_search
 
 app = FastAPI()
 
@@ -63,6 +63,8 @@ async def solve_maze(request: SolveRequest):
             result = iterative_deepening(start, end, request.blocks, request.size, request.directions, dx, dy)
         elif request.algorithm == "bidirectional":
             result = bidirectional_search(start, end, request.blocks, request.size, request.directions, dx, dy)
+        elif request.algorithm == "local_beam":
+            result = local_beam_search(start, end, request.blocks, request.size, request.directions, dx, dy)
         
         if result["path"] is None:
             return SolveResponse(

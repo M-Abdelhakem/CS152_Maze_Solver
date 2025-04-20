@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict, Any, Callable
+from typing import List, Any
 import math
 
 @dataclass
@@ -15,7 +15,7 @@ class PriorityQueueItem:
     def __lt__(self, other):
         return self.priority < other.priority
 
-def make_2d_array(size: int, default_value) -> List[List]:
+def make_2d_array(size: int, default_value: Any) -> List[List[Any]]:
     return [[default_value for _ in range(size)] for _ in range(size)]
 
 def is_safe(x: int, y: int, size: int, blocks: List[List[bool]]) -> bool:
@@ -30,7 +30,7 @@ def get_neighbors(p: Pair, blocks: List[List[bool]], size: int, directions: int,
             neighbors.append(Pair(x, y))
     return neighbors
 
-def get_heuristic(heuristic_type: int) -> Callable[[Pair, Pair], float]:
+def get_heuristic(heuristic_type: int):
     def manhattan_distance(a: Pair, b: Pair) -> float:
         return abs(a.first - b.first) + abs(a.second - b.second)
         
@@ -58,6 +58,11 @@ def get_heuristic(heuristic_type: int) -> Callable[[Pair, Pair], float]:
         dx = a.first - b.first
         dy = a.second - b.second
         return dx * dx + dy * dy
+        
+    def minkowski_distance(a: Pair, b: Pair, p: float = 10) -> float:
+        dx = abs(a.first - b.first)
+        dy = abs(a.second - b.second)
+        return math.pow(math.pow(dx, p) + math.pow(dy, p), 1 / p)
     
     heuristics = [
         manhattan_distance,
@@ -65,7 +70,8 @@ def get_heuristic(heuristic_type: int) -> Callable[[Pair, Pair], float]:
         euclidean_distance,
         chebyshev_distance,
         octile_distance,
-        squared_euclidean_distance
+        squared_euclidean_distance,
+        minkowski_distance
     ]
     
     return heuristics[heuristic_type]
