@@ -1,7 +1,6 @@
 from typing import Dict, Any, List
 import time
 from utils import Pair, make_2d_array, get_neighbors
-from collections import deque
 
 def bfs(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int]) -> Dict[str, Any]:
     # Special case: if start and end are the same
@@ -18,17 +17,14 @@ def bfs(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions:
         }
     
     start_time = time.time()
-    
     visited = make_2d_array(size, False)
     parent = make_2d_array(size, Pair(-1, -1))
-    exploration_order = []
-    
-    queue = deque([start])
+    queue = [start]
     visited[start.first][start.second] = True
+    exploration_order = [[start.first, start.second]]
     
     while queue:
-        current = queue.popleft()
-        exploration_order.append([current.first, current.second])
+        current = queue.pop(0)
         
         if current.first == end.first and current.second == end.second:
             # Reconstruct path
@@ -60,6 +56,7 @@ def bfs(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions:
                 visited[neighbor.first][neighbor.second] = True
                 parent[neighbor.first][neighbor.second] = current
                 queue.append(neighbor)
+                exploration_order.append([neighbor.first, neighbor.second])
     
     # Calculate metrics for no path found
     explored_size = sum(sum(row) for row in visited)

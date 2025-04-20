@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 import time
+from queue import PriorityQueue
 from utils import Pair, make_2d_array, get_neighbors, PriorityQueueItem
-from heapq import heappush, heappop
 
 def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int]) -> Dict[str, Any]:
     # Special case: if start and end are the same
@@ -18,24 +18,16 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
         }
     
     start_time = time.time()
-    
     visited = make_2d_array(size, False)
     parent = make_2d_array(size, Pair(-1, -1))
     distance = make_2d_array(size, float('inf'))
-    exploration_order = []
-    
+    pq = PriorityQueue()
+    pq.put(PriorityQueueItem(0, start))
     distance[start.first][start.second] = 0
-    open_set = []
-    heappush(open_set, PriorityQueueItem(0, start))
+    exploration_order = [[start.first, start.second]]
     
-    while open_set:
-        current = heappop(open_set).item
-        
-        if visited[current.first][current.second]:
-            continue
-            
-        visited[current.first][current.second] = True
-        exploration_order.append([current.first, current.second])
+    while not pq.empty():
+        current = pq.get().position
         
         if current.first == end.first and current.second == end.second:
             # Reconstruct path
@@ -46,7 +38,7 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
             
             # Calculate metrics
             explored_size = sum(sum(row) for row in visited)
-            frontier_size = len(open_set)
+            frontier_size = pq.qsize()
             time_taken_ms = (time.time() - start_time) * 1000
             path_length = len(path) - 1  # Subtract 1 to not count the start node
             
@@ -60,18 +52,25 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
                     "path_length": path_length
                 }
             }
+        
+        if visited[current.first][current.second]:
+            continue
             
+        visited[current.first][current.second] = True
+        exploration_order.append([current.first, current.second])
+        
         neighbors = get_neighbors(current, blocks, size, directions, dx, dy)
         for neighbor in neighbors:
-            alt = distance[current.first][current.second] + 1
-            if alt < distance[neighbor.first][neighbor.second]:
-                distance[neighbor.first][neighbor.second] = alt
-                parent[neighbor.first][neighbor.second] = current
-                heappush(open_set, PriorityQueueItem(alt, neighbor))
+            if not visited[neighbor.first][neighbor.second]:
+                new_distance = distance[current.first][current.second] + 1
+                if new_distance < distance[neighbor.first][neighbor.second]:
+                    distance[neighbor.first][neighbor.second] = new_distance
+                    parent[neighbor.first][neighbor.second] = current
+                    pq.put(PriorityQueueItem(new_distance, neighbor))
     
     # Calculate metrics for no path found
     explored_size = sum(sum(row) for row in visited)
-    frontier_size = len(open_set)
+    frontier_size = pq.qsize()
     time_taken_ms = (time.time() - start_time) * 1000
     
     return {
