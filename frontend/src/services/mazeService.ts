@@ -27,8 +27,8 @@ export interface SolveResponse {
 
 export async function solveMaze(request: SolveRequest): Promise<SolveResponse> {
   try {
-    // const response = await fetch(`/api/proxy/solve`, {  // for deployment on vercel
-    const response = await fetch(`${API_URL}/solve`, {  // for local development
+    const response = await fetch(`/api/proxy/solve`, {  // for deployment on vercel
+    // const response = await fetch(`${API_URL}/solve`, {  // for local development
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
