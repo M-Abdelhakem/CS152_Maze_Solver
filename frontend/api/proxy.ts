@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { API_URL } from '../src/services/mazeService';
+
+// Define the API URL directly since I only use it for deployment on vercel
+const BACKEND_URL = 'http://3.147.27.202:8000';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -7,7 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Incoming request URL:', req.url);
     console.log('Incoming request method:', req.method);
     
-    const targetUrl = `${API_URL}${req.url?.replace('/api/proxy', '') || ''}`;
+    const targetUrl = `${BACKEND_URL}${req.url?.replace('/api/proxy', '') || ''}`;
     console.log('Forwarding to:', targetUrl);
     
     const response = await fetch(targetUrl, {
