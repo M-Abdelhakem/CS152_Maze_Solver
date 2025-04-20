@@ -13,6 +13,17 @@ import { make2dArray } from "./helpers"
 import "./style.css"
 import { solveMaze } from './services/mazeService';
 
+// Add algorithm name mapping at the top of the file after imports
+const algorithmNames: { [key: string]: string } = {
+  'bfs': 'BFS',
+  'dfs': 'DFS',
+  'dijkstra': "Dijkstra",
+  'astar': 'A*',
+  'iterative_deepening': 'IDDFS',
+  'bidirectional': 'Bidirectional',
+  'local_beam': 'Local Beam'
+};
+
 let grid = document.getElementById("grid"),
   select = document.getElementById("mode"),
   algorithmSelectBox = document.getElementById("algorithm"),
@@ -374,6 +385,7 @@ function main(size = DEFAULT_SIZE) {
     
     if (response.error) {
       console.error('Error:', response.error);
+      showAlert(`No solution found! Couldn't find a path from (A) to (B) with the ${algorithmNames[algorithm]} in this maze configuration.`);
       return;
     }
 
@@ -397,6 +409,9 @@ function main(size = DEFAULT_SIZE) {
           }
         }
       }
+    } else {
+      // No path found - display an animated alert
+      showAlert(`No solution found! Couldn't find a path from start (A) to end (B) with the ${algorithm} algorithm in this maze configuration.`);
     }
     
     // Display metrics
@@ -523,3 +538,40 @@ function syncSizeForm() {
 }
 
 syncSizeForm()
+
+// Function to show an animated alert
+function showAlert(message: string) {
+  // Get the alert container from the HTML
+  const alertContainer = document.getElementById('alert-container');
+  if (!alertContainer) {
+    console.error('Alert container not found');
+    return;
+  }
+  
+  // Create alert element
+  const alert = document.createElement('div');
+  alert.className = 'alert';
+  alert.textContent = message;
+  
+  // Add alert to container
+  alertContainer.appendChild(alert);
+  
+  // Remove alert after 5 seconds
+  setTimeout(() => {
+    alert.classList.add('hiding');
+    setTimeout(() => {
+      alert.remove();
+    }, 500); // Match the animation duration
+  }, 5000);
+}
+
+// Add this at the beginning of the file, after the imports
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize alert container if it doesn't exist
+  if (!document.getElementById('alert-container')) {
+    const alertContainer = document.createElement('div');
+    alertContainer.id = 'alert-container';
+    alertContainer.className = 'alert-container';
+    document.body.appendChild(alertContainer);
+  }
+});

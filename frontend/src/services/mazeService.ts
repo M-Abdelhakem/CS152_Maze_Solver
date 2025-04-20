@@ -1,7 +1,7 @@
 import { Pair } from '../helpers/types';
 
-export const API_URL = 'http://3.147.27.202:8000';  // for deployment on vercel
-// export const API_URL = 'http://localhost:8000';  // for local development
+// export const API_URL = 'http://3.147.27.202:8000';  // for deployment on vercel
+export const API_URL = 'http://localhost:8000';  // for local development
 
 export interface SolveRequest {
   start: [number, number];
@@ -27,8 +27,8 @@ export interface SolveResponse {
 
 export async function solveMaze(request: SolveRequest): Promise<SolveResponse> {
   try {
-    const response = await fetch(`/api/proxy/solve`, {  // for deployment on vercel
-    // const response = await fetch(`${API_URL}/solve`, {  // for local development
+    // const response = await fetch(`/api/proxy/solve`, {  // for deployment on vercel
+    const response = await fetch(`${API_URL}/solve`, {  // for local development
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
