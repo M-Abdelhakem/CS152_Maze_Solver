@@ -29,6 +29,7 @@ class SolveRequest(BaseModel):
     directions: int
     algorithm: str
     heuristic_type: Optional[int] = 0
+    beam_width: Optional[int] = 5
 
 class SolveResponse(BaseModel):
     path: Optional[List[List[int]]]
@@ -64,7 +65,7 @@ async def solve_maze(request: SolveRequest):
         elif request.algorithm == "bidirectional":
             result = bidirectional_search(start, end, request.blocks, request.size, request.directions, dx, dy)
         elif request.algorithm == "local_beam":
-            result = local_beam_search(start, end, request.blocks, request.size, request.directions, dx, dy)
+            result = local_beam_search(start, end, request.blocks, request.size, request.directions, dx, dy, request.beam_width)
         
         if result["path"] is None:
             return SolveResponse(

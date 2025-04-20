@@ -3,6 +3,12 @@ import time
 from utils import Pair, make_2d_array, get_neighbors, get_heuristic
 
 def local_beam_search(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int], beam_width: int = 5) -> Dict[str, Any]:
+    # Validate beam_width
+    if beam_width < 1:
+        beam_width = 1
+    elif beam_width > 20:  # Set a reasonable upper limit
+        beam_width = 20
+    
     # Special case: if start and end are the same
     if start.first == end.first and start.second == end.second:
         return {

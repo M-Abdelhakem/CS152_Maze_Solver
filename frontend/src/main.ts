@@ -304,6 +304,32 @@ function main(size = DEFAULT_SIZE) {
       document.querySelector("#heuristic")!.classList.add("hidden")
       document.querySelector("#heuristic-label")!.classList.add("hidden")
     }
+    
+    // show the beam width input and update max value if local beam is selected
+    if (algorithm === "local_beam") {
+      document.querySelector("#beam-width")!.classList.remove("hidden")
+      document.querySelector("#beam-width-label")!.classList.remove("hidden")
+      
+      // Set max value to size - 1 (number of cells per row minus 1)
+      const sizeInput = document.getElementById("size") as HTMLInputElement
+      const beamWidthInput = document.getElementById("beam-width") as HTMLInputElement
+      beamWidthInput.max = (parseInt(sizeInput.value) - 1).toString()
+      
+      // Add input event listener to validate beam width as user types
+      beamWidthInput.addEventListener("input", () => {
+        const maxBeamWidth = parseInt(beamWidthInput.max)
+        const currentValue = parseInt(beamWidthInput.value)
+        
+        if (currentValue > maxBeamWidth) {
+          beamWidthInput.setCustomValidity(`Value must be less than or equal to ${maxBeamWidth}`)
+        } else {
+          beamWidthInput.setCustomValidity("")
+        }
+      })
+    } else {
+      document.querySelector("#beam-width")!.classList.add("hidden")
+      document.querySelector("#beam-width-label")!.classList.add("hidden")
+    }
   })
 
   startBtn?.addEventListener("click", async () => {
@@ -316,6 +342,22 @@ function main(size = DEFAULT_SIZE) {
 
     const algorithm = (<HTMLSelectElement>algorithmSelectBox).value
     const heuristicType = +(<HTMLSelectElement>document.getElementById("heuristic")).value
+    const beamWidthInput = document.getElementById("beam-width") as HTMLInputElement
+    const beamWidth = +beamWidthInput.value
+    
+    // Validate beam width if local beam algorithm is selected
+    if (algorithm === "local_beam") {
+      const maxBeamWidth = parseInt(beamWidthInput.max)
+      if (beamWidth > maxBeamWidth) {
+        // Show error message
+        beamWidthInput.setCustomValidity(`Value must be less than or equal to ${maxBeamWidth}`)
+        beamWidthInput.reportValidity()
+        return
+      } else {
+        // Clear any previous error
+        beamWidthInput.setCustomValidity("")
+      }
+    }
 
     const request = {
       start: [location.first, location.second] as [number, number],
@@ -324,7 +366,8 @@ function main(size = DEFAULT_SIZE) {
       size: size,
       directions: directions,
       algorithm: algorithm,
-      heuristic_type: heuristicType
+      heuristic_type: heuristicType,
+      beam_width: beamWidth
     };
 
     const response = await solveMaze(request);
@@ -457,6 +500,14 @@ function syncSizeForm() {
   const input = <HTMLInputElement>document.getElementById("size")
   input.value = DEFAULT_SIZE.toString()
   input.max = MAX_SIZE.toString()
+
+  // Update beam width max value when size changes
+  input.addEventListener("input", () => {
+    const beamWidthInput = document.getElementById("beam-width") as HTMLInputElement
+    if (beamWidthInput) {
+      beamWidthInput.max = (parseInt(input.value) - 1).toString()
+    }
+  })
 
   document.getElementById("form")?.addEventListener("submit", (e) => {
     e.preventDefault()
