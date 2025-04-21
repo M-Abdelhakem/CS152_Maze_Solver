@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from maze_solver import Pair, bfs, dfs, dijkstra, astar, iterative_deepening, bidirectional_search, local_beam_search, rrt
+from maze_solver import Pair, bfs, dfs, dijkstra, astar, iterative_deepening, bidirectional_search, local_beam_search, rrt, greedy_best_first
 
 app = FastAPI()
 
@@ -34,13 +34,8 @@ class SolveRequest(BaseModel):
 class SolveResponse(BaseModel):
     path: Optional[List[List[int]]]
     exploration_order: List[List[int]]
-    error: Optional[str]
-    metrics: Optional[dict] = {
-        "explored_size": 0,
-        "frontier_size": 0,
-        "time_taken_ms": 0,
-        "path_length": 0
-    }
+    error: Optional[str] = None
+    metrics: dict
 
 @app.post("/solve", response_model=SolveResponse)
 async def solve_maze(request: SolveRequest):
@@ -68,6 +63,8 @@ async def solve_maze(request: SolveRequest):
             result = local_beam_search(start, end, request.blocks, request.size, request.directions, dx, dy, request.beam_width)
         elif request.algorithm == "rrt":
             result = rrt(start, end, request.blocks, request.size, request.directions, dx, dy)
+        elif request.algorithm == "greedy_best_first":
+            result = greedy_best_first(start, end, request.blocks, request.size, request.directions, dx, dy, request.heuristic_type)
         
         if result["path"] is None:
             return SolveResponse(
@@ -76,19 +73,23 @@ async def solve_maze(request: SolveRequest):
                 error="No path found",
                 metrics=result["metrics"]
             )
-            
+        
         return SolveResponse(
             path=[[p.first, p.second] for p in result["path"]],
             exploration_order=result["exploration_order"],
-            error=None,
             metrics=result["metrics"]
         )
-        
     except Exception as e:
         return SolveResponse(
-            path=None, 
+            path=None,
             exploration_order=[],
-            error=str(e)
+            error=str(e),
+            metrics={
+                "explored_size": 0,
+                "frontier_size": 0,
+                "time_taken_ms": 0,
+                "path_length": 0
+            }
         )
 
 if __name__ == "__main__":

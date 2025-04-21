@@ -22,7 +22,8 @@ const algorithmNames: { [key: string]: string } = {
   'iterative_deepening': 'IDDFS',
   'bidirectional': 'Bidirectional',
   'local_beam': 'Local Beam',
-  'rrt': 'RRT'
+  'rrt': 'RRT',
+  'greedy_best_first': 'Greedy Best-First'
 };
 
 let grid = document.getElementById("grid"),
@@ -31,7 +32,7 @@ let grid = document.getElementById("grid"),
   startBtn = document.getElementById("start")
 
 let mode: "blocks" | "target" | "location" = "blocks",
-  algorithm: "bfs" | "dfs" | "dijkstra" | "astar" | "iterative_deepening" | "bidirectional" | "local_beam" | "rrt" = "bfs"
+  algorithm: "bfs" | "dfs" | "dijkstra" | "astar" | "iterative_deepening" | "bidirectional" | "local_beam" | "rrt" | "greedy_best_first" = "bfs"
 
 function main(size = DEFAULT_SIZE) {
   const blocks = make2dArray(size, false)
@@ -304,13 +305,14 @@ function main(size = DEFAULT_SIZE) {
       | "dfs"
       | "dijkstra"
       | "astar"
+      | "greedy_best_first"
       | "iterative_deepening"
       | "bidirectional"
       | "local_beam"
       | "rrt"
 
     // show the a* options and remove them if not selected
-    if (algorithm === "astar") {
+    if (algorithm === "astar" || algorithm === "greedy_best_first") {
       document.querySelector("#heuristic")!.classList.remove("hidden")
       document.querySelector("#heuristic-label")!.classList.remove("hidden")
     } else {
@@ -483,6 +485,10 @@ function main(size = DEFAULT_SIZE) {
       case 'rrt':
         timeComplexity = 'O(n log n) where n is the number of nodes in the tree';
         spaceComplexity = 'O(n) where n is the number of nodes in the tree';
+        break;
+      case 'greedy_best_first':
+        timeComplexity = 'O(n log n) where n is the number of cells';
+        spaceComplexity = 'O(n) where n is the number of cells';
         break;
     }
     

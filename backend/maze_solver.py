@@ -10,6 +10,7 @@ from algorithms.iterative_deepening import iterative_deepening
 from algorithms.bidirectional import bidirectional_search
 from algorithms.local_beam import local_beam_search
 from algorithms.rrt import rrt
+from algorithms.greedy_best_first import greedy_best_first
 
 # Re-export all algorithms and types
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     'iterative_deepening',
     'bidirectional_search',
     'local_beam_search',
-    'rrt'
+    'rrt',
+    'greedy_best_first'
 ] 
