@@ -25,11 +25,13 @@ class SolveRequest(BaseModel):
     start: List[int]
     end: List[int]
     blocks: List[List[bool]]
+    weights: Optional[List[List[int]]] = None
     size: int
     directions: int
     algorithm: str
     heuristic_type: Optional[int] = 0
     beam_width: Optional[int] = 5
+    is_weighted: Optional[bool] = False
 
 class SolveResponse(BaseModel):
     path: Optional[List[List[int]]]
@@ -52,9 +54,9 @@ async def solve_maze(request: SolveRequest):
         elif request.algorithm == "dfs":
             result = dfs(start, end, request.blocks, request.size, request.directions, dx, dy)
         elif request.algorithm == "dijkstra":
-            result = dijkstra(start, end, request.blocks, request.size, request.directions, dx, dy)
+            result = dijkstra(start, end, request.blocks, request.size, request.directions, dx, dy, request.weights, request.is_weighted)
         elif request.algorithm == "astar":
-            result = astar(start, end, request.blocks, request.size, request.directions, dx, dy, request.heuristic_type)
+            result = astar(start, end, request.blocks, request.size, request.directions, dx, dy, request.heuristic_type, request.weights, request.is_weighted)
         elif request.algorithm == "iterative_deepening":
             result = iterative_deepening(start, end, request.blocks, request.size, request.directions, dx, dy)
         elif request.algorithm == "bidirectional":
@@ -64,7 +66,7 @@ async def solve_maze(request: SolveRequest):
         elif request.algorithm == "rrt":
             result = rrt(start, end, request.blocks, request.size, request.directions, dx, dy)
         elif request.algorithm == "greedy_best_first":
-            result = greedy_best_first(start, end, request.blocks, request.size, request.directions, dx, dy, request.heuristic_type)
+            result = greedy_best_first(start, end, request.blocks, request.size, request.directions, dx, dy, request.heuristic_type, request.weights, request.is_weighted)
         
         if result["path"] is None:
             return SolveResponse(
@@ -88,7 +90,8 @@ async def solve_maze(request: SolveRequest):
                 "explored_size": 0,
                 "frontier_size": 0,
                 "time_taken_ms": 0,
-                "path_length": 0
+                "path_length": 0,
+                "total_cost": 0
             }
         )
 

@@ -3,12 +3,12 @@ import time
 from queue import PriorityQueue
 from utils import Pair, make_2d_array, get_neighbors, PriorityQueueItem
 
-def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int]) -> Dict[str, Any]:
+def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int], weights: List[List[int]] = None, is_weighted: bool = False) -> Dict[str, Any]:
     """Implements Dijkstra's algorithm for finding the shortest path.
     
     Dijkstra's algorithm is a graph search algorithm that finds the shortest path between
-    nodes in a weighted graph. In this implementation, all edges have equal weight (1),
-    making it effectively a breadth-first search with a priority queue.
+    nodes in a weighted graph. When is_weighted is True, it uses the provided weights
+    to find the path with minimum total cost.
     
     Args:
         start (Pair): Starting position coordinates (x, y)
@@ -18,6 +18,8 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
         directions (int): Number of possible movement directions (4 or 8)
         dx (List[int]): List of x-direction movements
         dy (List[int]): List of y-direction movements
+        weights (List[List[int]], optional): 2D grid of cell weights. Defaults to None.
+        is_weighted (bool, optional): Whether to use weights. Defaults to False.
     
     Returns:
         Dict[str, Any]: A dictionary containing:
@@ -28,6 +30,7 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
                 - frontier_size: Size of the frontier (priority queue)
                 - time_taken_ms: Time taken to find the path in milliseconds
                 - path_length: Length of the found path (0 if no path found)
+                - total_cost: Total cost of the path (sum of weights)
     """
     # Special case: if start and end are the same
     if start.first == end.first and start.second == end.second:
@@ -38,7 +41,8 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
                 "explored_size": 1,
                 "frontier_size": 0,
                 "time_taken_ms": 0,
-                "path_length": 0
+                "path_length": 0,
+                "total_cost": 0
             }
         }
     
@@ -70,8 +74,15 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
         if current.first == end.first and current.second == end.second:
             # Reconstruct path
             path = []
+            total_cost = 0
             while current.first != -1:
                 path.insert(0, current)
+                if parent[current.first][current.second].first != -1:
+                    # Add the weight of the current cell to total cost
+                    if is_weighted and weights:
+                        total_cost += weights[current.first][current.second]
+                    else:
+                        total_cost += 1
                 current = parent[current.first][current.second]
             
             # Calculate metrics
@@ -87,14 +98,20 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
                     "explored_size": explored_size,
                     "frontier_size": frontier_size,
                     "time_taken_ms": time_taken_ms,
-                    "path_length": path_length
+                    "path_length": path_length,
+                    "total_cost": total_cost
                 }
             }
         
         neighbors = get_neighbors(current, blocks, size, directions, dx, dy)
         for neighbor in neighbors:
             if not visited[neighbor.first][neighbor.second]:
-                new_distance = distance[current.first][current.second] + 1
+                # Calculate edge weight
+                edge_weight = 1
+                if is_weighted and weights:
+                    edge_weight = weights[neighbor.first][neighbor.second]
+                
+                new_distance = distance[current.first][current.second] + edge_weight
                 if new_distance < distance[neighbor.first][neighbor.second]:
                     distance[neighbor.first][neighbor.second] = new_distance
                     parent[neighbor.first][neighbor.second] = current
@@ -116,6 +133,7 @@ def dijkstra(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direct
             "explored_size": explored_size,
             "frontier_size": frontier_size,
             "time_taken_ms": time_taken_ms,
-            "path_length": 0
+            "path_length": 0,
+            "total_cost": 0
         }
     } 

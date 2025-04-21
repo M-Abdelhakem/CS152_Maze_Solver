@@ -3,12 +3,12 @@ import time
 from queue import PriorityQueue
 from utils import Pair, make_2d_array, get_neighbors, get_heuristic, PriorityQueueItem
 
-def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int], heuristic_type: str = "manhattan") -> Dict[str, Any]:
+def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int], heuristic_type: str = "manhattan", weights: List[List[int]] = None, is_weighted: bool = False) -> Dict[str, Any]:
     """Implements the Greedy Best-First Search algorithm for pathfinding.
     
     Greedy Best-First Search uses a heuristic function to estimate the distance to the goal
-    and always expands the node that appears to be closest to the goal. While it's faster
-    than A* in many cases, it doesn't guarantee the shortest path.
+    and always expands the node that appears to be closest to the goal. When is_weighted is True,
+    it considers cell weights in the path selection, though it may not find the optimal path.
     
     Args:
         start (Pair): Starting position coordinates (x, y)
@@ -19,6 +19,8 @@ def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: in
         dx (List[int]): List of x-direction movements
         dy (List[int]): List of y-direction movements
         heuristic_type (str, optional): Type of heuristic to use ("manhattan", "euclidean", etc.). Defaults to "manhattan"
+        weights (List[List[int]], optional): 2D grid of cell weights. Defaults to None.
+        is_weighted (bool, optional): Whether to use weights. Defaults to False.
     
     Returns:
         Dict[str, Any]: A dictionary containing:
@@ -29,6 +31,7 @@ def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: in
                 - frontier_size: Size of the frontier (priority queue)
                 - time_taken_ms: Time taken to find the path in milliseconds
                 - path_length: Length of the found path (0 if no path found)
+                - total_cost: Total cost of the path (sum of weights)
     """
     # Special case: if start and end are the same
     if start.first == end.first and start.second == end.second:
@@ -39,7 +42,8 @@ def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: in
                 "explored_size": 1,
                 "frontier_size": 0,
                 "time_taken_ms": 0,
-                "path_length": 0
+                "path_length": 0,
+                "total_cost": 0
             }
         }
     
@@ -48,7 +52,13 @@ def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: in
     parent = make_2d_array(size, Pair(-1, -1))
     pq = PriorityQueue()
     heuristic_func = get_heuristic(heuristic_type)
-    pq.put(PriorityQueueItem(heuristic_func(start, end), start))
+    
+    # Calculate initial score considering weights if enabled
+    initial_score = heuristic_func(start, end)
+    if is_weighted and weights:
+        initial_score += weights[start.first][start.second]
+    pq.put(PriorityQueueItem(initial_score, start))
+    
     exploration_order = []
     
     # Mark start as in frontier
@@ -70,8 +80,15 @@ def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: in
         if current.first == end.first and current.second == end.second:
             # Reconstruct path
             path = []
+            total_cost = 0
             while current.first != -1:
                 path.insert(0, current)
+                if parent[current.first][current.second].first != -1:
+                    # Add the weight of the current cell to total cost
+                    if is_weighted and weights:
+                        total_cost += weights[current.first][current.second]
+                    else:
+                        total_cost += 1
                 current = parent[current.first][current.second]
             
             # Calculate metrics
@@ -87,7 +104,8 @@ def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: in
                     "explored_size": explored_size,
                     "frontier_size": frontier_size,
                     "time_taken_ms": time_taken_ms,
-                    "path_length": path_length
+                    "path_length": path_length,
+                    "total_cost": total_cost
                 }
             }
         
@@ -96,9 +114,14 @@ def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: in
             if not visited[neighbor.first][neighbor.second]:
                 parent[neighbor.first][neighbor.second] = current
                 
+                # Calculate score considering weights if enabled
+                score = heuristic_func(neighbor, end)
+                if is_weighted and weights:
+                    score += weights[neighbor.first][neighbor.second]
+                
                 # Add to frontier if not already there
                 if not in_frontier[neighbor.first][neighbor.second]:
-                    pq.put(PriorityQueueItem(heuristic_func(neighbor, end), neighbor))
+                    pq.put(PriorityQueueItem(score, neighbor))
                     in_frontier[neighbor.first][neighbor.second] = True
     
     # Calculate metrics for no path found
@@ -113,6 +136,7 @@ def greedy_best_first(start: Pair, end: Pair, blocks: List[List[bool]], size: in
             "explored_size": explored_size,
             "frontier_size": frontier_size,
             "time_taken_ms": time_taken_ms,
-            "path_length": 0
+            "path_length": 0,
+            "total_cost": 0
         }
     }

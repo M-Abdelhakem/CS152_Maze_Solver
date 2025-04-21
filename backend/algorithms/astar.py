@@ -1,14 +1,14 @@
 from typing import Dict, Any, List
 import time
 from queue import PriorityQueue
-from utils import Pair, make_2d_array, get_neighbors, get_heuristic, PriorityQueueItem
+from utils import Pair, make_2d_array, get_neighbors, PriorityQueueItem, get_heuristic
 
-def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int], heuristic_type: str = "manhattan") -> Dict[str, Any]:
+def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int], heuristic_type: str = "manhattan", weights: List[List[int]] = None, is_weighted: bool = False) -> Dict[str, Any]:
     """Implements the A* pathfinding algorithm.
     
     A* is an informed search algorithm that uses a heuristic function to guide the search
-    towards the goal. It combines the benefits of Dijkstra's algorithm (which finds the
-    shortest path) and Best-First Search (which uses a heuristic to guide the search).
+    towards the goal. When is_weighted is True, it uses the provided weights to find the
+    path with minimum total cost while still using the heuristic to guide the search.
     
     Args:
         start (Pair): Starting position coordinates (x, y)
@@ -18,7 +18,9 @@ def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direction
         directions (int): Number of possible movement directions (4 or 8)
         dx (List[int]): List of x-direction movements
         dy (List[int]): List of y-direction movements
-        heuristic_type (str, optional): Type of heuristic to use ("manhattan", "euclidean", etc.). Defaults to "manhattan"
+        heuristic_type (str, optional): Type of heuristic to use. Defaults to "manhattan".
+        weights (List[List[int]], optional): 2D grid of cell weights. Defaults to None.
+        is_weighted (bool, optional): Whether to use weights. Defaults to False.
     
     Returns:
         Dict[str, Any]: A dictionary containing:
@@ -29,6 +31,7 @@ def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direction
                 - frontier_size: Size of the frontier (priority queue)
                 - time_taken_ms: Time taken to find the path in milliseconds
                 - path_length: Length of the found path (0 if no path found)
+                - total_cost: Total cost of the path (sum of weights)
     """
     # Special case: if start and end are the same
     if start.first == end.first and start.second == end.second:
@@ -39,7 +42,8 @@ def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direction
                 "explored_size": 1,
                 "frontier_size": 0,
                 "time_taken_ms": 0,
-                "path_length": 0
+                "path_length": 0,
+                "total_cost": 0
             }
         }
     
@@ -61,21 +65,20 @@ def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direction
     
     while not pq.empty():
         current = pq.get().item
-        
-        # Skip if already visited
-        if visited[current.first][current.second]:
-            continue
-            
-        # Mark as visited and add to exploration order
-        visited[current.first][current.second] = True
         in_frontier[current.first][current.second] = False
-        exploration_order.append([current.first, current.second])
         
         if current.first == end.first and current.second == end.second:
             # Reconstruct path
             path = []
+            total_cost = 0
             while current.first != -1:
                 path.insert(0, current)
+                if parent[current.first][current.second].first != -1:
+                    # Add the weight of the current cell to total cost
+                    if is_weighted and weights:
+                        total_cost += weights[current.first][current.second]
+                    else:
+                        total_cost += 1
                 current = parent[current.first][current.second]
             
             # Calculate metrics
@@ -91,20 +94,29 @@ def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direction
                     "explored_size": explored_size,
                     "frontier_size": frontier_size,
                     "time_taken_ms": time_taken_ms,
-                    "path_length": path_length
+                    "path_length": path_length,
+                    "total_cost": total_cost
                 }
             }
+        
+        visited[current.first][current.second] = True
+        exploration_order.append([current.first, current.second])
         
         neighbors = get_neighbors(current, blocks, size, directions, dx, dy)
         for neighbor in neighbors:
             if not visited[neighbor.first][neighbor.second]:
-                tentative_g_score = g_score[current.first][current.second] + 1
+                # Calculate edge weight
+                edge_weight = 1
+                if is_weighted and weights:
+                    edge_weight = weights[neighbor.first][neighbor.second]
+                
+                tentative_g_score = g_score[current.first][current.second] + edge_weight
+                
                 if tentative_g_score < g_score[neighbor.first][neighbor.second]:
                     parent[neighbor.first][neighbor.second] = current
                     g_score[neighbor.first][neighbor.second] = tentative_g_score
-                    f_score[neighbor.first][neighbor.second] = g_score[neighbor.first][neighbor.second] + heuristic_func(neighbor, end)
+                    f_score[neighbor.first][neighbor.second] = tentative_g_score + heuristic_func(neighbor, end)
                     
-                    # Add to frontier if not already there
                     if not in_frontier[neighbor.first][neighbor.second]:
                         pq.put(PriorityQueueItem(f_score[neighbor.first][neighbor.second], neighbor))
                         in_frontier[neighbor.first][neighbor.second] = True
@@ -121,6 +133,7 @@ def astar(start: Pair, end: Pair, blocks: List[List[bool]], size: int, direction
             "explored_size": explored_size,
             "frontier_size": frontier_size,
             "time_taken_ms": time_taken_ms,
-            "path_length": 0
+            "path_length": 0,
+            "total_cost": 0
         }
     }

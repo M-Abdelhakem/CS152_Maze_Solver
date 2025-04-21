@@ -4,6 +4,7 @@ import {
   PATH_COLOR,
   TARGET_LOCATION_COLOR,
   VISITED_CELL_COLOR,
+  WEIGHT_COLORS,
 } from "./constants"
 import {
   Pair,
@@ -32,14 +33,22 @@ let grid = document.getElementById("grid"),
   algorithmSelectBox = document.getElementById("algorithm"),
   startBtn = document.getElementById("start")
 
-let mode: "blocks" | "target" | "location" = "blocks",
+let mode: "blocks" | "target" | "location" | "weights" = "blocks",
   algorithm: "bfs" | "dfs" | "dijkstra" | "astar" | "iterative_deepening" | "bidirectional" | "local_beam" | "rrt" | "greedy_best_first" = "bfs"
 
 function main(size = DEFAULT_SIZE) {
   const blocks = make2dArray(size, false)
+  const weights = make2dArray(size, 1)
+  let isWeighted = false
   let isSolved = false
 
   grid!.style.gridTemplateColumns = `repeat(${size}, 1fr)`
+  // Add fixed dimensions to the grid to prevent resizing
+  grid!.style.width = '100%'
+  grid!.style.height = 'auto'
+  grid!.style.aspectRatio = '1 / 1'
+  grid!.style.maxWidth = '800px'
+  grid!.style.maxHeight = '800px'
 
   let target = new Pair(size - 1, size - 1),
     location = new Pair(0, 0)
@@ -90,7 +99,12 @@ function main(size = DEFAULT_SIZE) {
           <p class="text-xs text-gray-500">Number of steps in the found path</p>
         </div>
       </div>
-      <div class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="font-semibold text-gray-700">Total Cost</p>
+          <p class="text-2xl font-bold text-orange-600"><span id="total-cost">0</span></p>
+          <p class="text-xs text-gray-500">Sum of weights along the path</p>
+        </div>
         <div class="bg-gray-50 p-3 rounded-lg">
           <p class="font-semibold text-gray-700">Exploration Efficiency</p>
           <p class="text-2xl font-bold text-indigo-600"><span id="exploration-efficiency">0</span></p>
@@ -116,6 +130,7 @@ function main(size = DEFAULT_SIZE) {
   // Create a container for the maze and options
   const mazeContainer = document.createElement('div');
   mazeContainer.className = 'flex flex-col md:flex-row gap-4 mb-8';
+  mazeContainer.style.minHeight = '800px'; // Increase minimum height to match the larger grid
   
   // Move the grid and options into the container
   const optionsContainer = document.getElementById('options')!;
@@ -128,22 +143,89 @@ function main(size = DEFAULT_SIZE) {
   appContainer.appendChild(mazeContainer);
   appContainer.appendChild(metricsDisplay);
 
+  // Add weighted maze toggle button to options container
+  const weightedToggle = document.createElement('div');
+  weightedToggle.className = 'mb-4';
+  weightedToggle.innerHTML = `
+    <label class="flex items-center space-x-2">
+      <input type="checkbox" id="weighted-toggle" class="form-checkbox h-5 w-5 text-blue-600">
+      <span>Enable Weighted Maze</span>
+    </label>
+  `;
+  // Insert after the title (h1 element)
+  const titleElement = optionsContainer.querySelector('h1');
+  if (titleElement) {
+    optionsContainer.insertBefore(weightedToggle, titleElement.nextSibling);
+  } else {
+    optionsContainer.insertBefore(weightedToggle, optionsContainer.firstChild);
+  }
+
+  // Add weight controls
+  const weightControls = document.createElement('div');
+  weightControls.id = 'weight-controls';
+  weightControls.className = 'mb-4 hidden';
+  weightControls.innerHTML = `
+    <div class="flex items-center space-x-4">
+      <button id="random-weights" class="px-3 py-2 bg-blue-500 text-white rounded-md">
+        Random Weights
+      </button>
+      <div class="flex items-center space-x-2">
+        <label>Weight:</label>
+        <input type="number" id="weight-value" min="1" max="9" value="1" 
+          class="w-16 px-2 py-1 border rounded">
+      </div>
+    </div>
+  `;
+  // Insert after the weighted toggle
+  optionsContainer.insertBefore(weightControls, weightedToggle.nextSibling);
+
+  // Add weighted maze event listeners
+  const weightedToggleCheckbox = document.getElementById('weighted-toggle') as HTMLInputElement;
+  const weightControlsDiv = document.getElementById('weight-controls')!;
+  const randomWeightsBtn = document.getElementById('random-weights')!;
+  const weightValueInput = document.getElementById('weight-value') as HTMLInputElement;
+
+  weightedToggleCheckbox.addEventListener('change', () => {
+    isWeighted = weightedToggleCheckbox.checked;
+    weightControlsDiv.classList.toggle('hidden', !isWeighted);
+    if (!isWeighted) {
+      // Reset weights to 1 when disabling weighted mode
+      weights.forEach(row => row.fill(1));
+      render();
+    }
+  });
+
+  randomWeightsBtn.addEventListener('click', () => {
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        if (!blocks[i][j]) {
+          weights[i][j] = Math.floor(Math.random() * 9) + 1;
+        }
+      }
+    }
+    render();
+  });
+
   function render() {
     grid!.innerHTML = ""
     grid!.style.gridTemplateColumns = `repeat(${size}, 1fr)`
+    // Set CSS variable for grid size
+    grid!.style.setProperty('--size', size.toString())
     
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size; j++) {
         const isLocation = location.first === i && location.second === j
         const isTarget = target.first === i && target.second === j
+        const weight = weights[i][j]
+        const weightColor = isWeighted && !blocks[i][j] ? WEIGHT_COLORS[weight - 1] : ''
 
         grid!.innerHTML += `
           <button id="c-${i}-${j}" i="${i}" j="${j}" class="cell ${
           blocks[i][j] ? "blocked" : ""
         }" style="background: ${
-          isLocation || isTarget ? TARGET_LOCATION_COLOR : ""
+          isLocation || isTarget ? TARGET_LOCATION_COLOR : weightColor
         }">
-            ${isLocation ? "A" : isTarget ? "B" : ""}
+            ${isLocation ? "A" : isTarget ? "B" : isWeighted && !blocks[i][j] ? weight : ""}
           </button>
         `
       }
@@ -169,20 +251,29 @@ function main(size = DEFAULT_SIZE) {
         const i = +cell.getAttribute("i")!,
           j = +cell.getAttribute("j")!
 
-        // preventing collision with target and location positions
-        if (
-          mode === "blocks" &&
-          (location.first !== i || location.second !== j) &&
-          (target.first !== i || target.second !== j)
-        ) {
-          blocks[i][j] = !blocks[i][j]
-          if (blocks[i][j])
-            document.getElementById(`c-${i}-${j}`)!.classList.add("blocked")
-          else
-            document.getElementById(`c-${i}-${j}`)!.classList.remove("blocked")
+        if (mode === "blocks") {
+          if ((location.first !== i || location.second !== j) &&
+              (target.first !== i || target.second !== j)) {
+            blocks[i][j] = !blocks[i][j]
+            if (blocks[i][j]) {
+              document.getElementById(`c-${i}-${j}`)!.classList.add("blocked")
+              weights[i][j] = 1  // Reset weight when blocking
+            } else {
+              document.getElementById(`c-${i}-${j}`)!.classList.remove("blocked")
+            }
+          }
+        } else if (mode === "weights" && isWeighted) {
+          if (!blocks[i][j] && 
+              (location.first !== i || location.second !== j) &&
+              (target.first !== i || target.second !== j)) {
+            const newWeight = +weightValueInput.value
+            weights[i][j] = newWeight
+            document.getElementById(`c-${i}-${j}`)!.style.backgroundColor = WEIGHT_COLORS[newWeight - 1]
+            document.getElementById(`c-${i}-${j}`)!.innerText = newWeight.toString()
+          }
         }
 
-        // preventing collision with blocks and target positions
+        // preventing collision with target and location positions
         if (
           mode === "location" &&
           !blocks[i][j] &&
@@ -204,7 +295,7 @@ function main(size = DEFAULT_SIZE) {
           )!.innerText = "A"
         }
 
-        // preventing collision with blocks and location positions
+        // preventing collision with blocks and target positions
         if (
           mode === "target" &&
           !blocks[i][j] &&
@@ -298,6 +389,7 @@ function main(size = DEFAULT_SIZE) {
       | "blocks"
       | "target"
       | "location"
+      | "weights"
   })
 
   algorithmSelectBox!.addEventListener("change", () => {
@@ -346,6 +438,9 @@ function main(size = DEFAULT_SIZE) {
       document.querySelector("#beam-width")!.classList.add("hidden")
       document.querySelector("#beam-width-label")!.classList.add("hidden")
     }
+    
+    // Force a re-render to ensure the grid layout is correct
+    render()
   })
 
   startBtn?.addEventListener("click", async () => {
@@ -379,11 +474,13 @@ function main(size = DEFAULT_SIZE) {
       start: [location.first, location.second] as [number, number],
       end: [target.first, target.second] as [number, number],
       blocks: blocks,
+      weights: isWeighted ? weights : undefined,
       size: size,
       directions: directions,
       algorithm: algorithm,
       heuristic_type: heuristicType,
-      beam_width: beamWidth
+      beam_width: beamWidth,
+      is_weighted: isWeighted
     };
 
     const response = await solveMaze(request);
@@ -427,7 +524,8 @@ function main(size = DEFAULT_SIZE) {
       explored_size: response.metrics.explored_size || 0,
       frontier_size: response.metrics.frontier_size || 0,
       time_taken_ms: response.metrics.time_taken_ms || 0,
-      path_length: response.metrics.path_length || 0
+      path_length: response.metrics.path_length || 0,
+      total_cost: response.metrics.total_cost || 0
     };
     
     // Update basic metrics
@@ -435,6 +533,7 @@ function main(size = DEFAULT_SIZE) {
     document.getElementById('frontier-size')!.textContent = metrics.frontier_size.toString();
     document.getElementById('time-taken')!.textContent = metrics.time_taken_ms.toFixed(2);
     document.getElementById('path-length')!.textContent = metrics.path_length.toString();
+    document.getElementById('total-cost')!.textContent = metrics.total_cost.toString();
     
     // Calculate additional metrics with proper error handling
     const explorationEfficiency = metrics.path_length > 0 
