@@ -3,6 +3,30 @@ import time
 from utils import Pair, make_2d_array, get_neighbors
 
 def bfs(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int]) -> Dict[str, Any]:
+    """Implements the Breadth-First Search (BFS) algorithm for pathfinding.
+    
+    BFS explores all nodes at the current depth before moving to nodes at the next depth level.
+    It guarantees the shortest path in terms of number of steps when all steps have equal cost.
+    
+    Args:
+        start (Pair): Starting position coordinates (x, y)
+        end (Pair): Goal position coordinates (x, y)
+        blocks (List[List[bool]]): 2D grid representing obstacles (True for blocked cells)
+        size (int): Size of the grid (assuming square grid)
+        directions (int): Number of possible movement directions (4 or 8)
+        dx (List[int]): List of x-direction movements
+        dy (List[int]): List of y-direction movements
+    
+    Returns:
+        Dict[str, Any]: A dictionary containing:
+            - path: List of Pair objects representing the found path, or None if no path exists
+            - exploration_order: List of coordinates showing the order of exploration
+            - metrics: Dictionary containing performance metrics:
+                - explored_size: Number of nodes explored
+                - frontier_size: Size of the frontier (queue)
+                - time_taken_ms: Time taken to find the path in milliseconds
+                - path_length: Length of the found path (0 if no path found)
+    """
     # Special case: if start and end are the same
     if start.first == end.first and start.second == end.second:
         return {

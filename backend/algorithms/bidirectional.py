@@ -4,6 +4,32 @@ from collections import deque
 from utils import Pair, make_2d_array, get_neighbors
 
 def bidirectional_search(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions: int, dx: List[int], dy: List[int]) -> Dict[str, Any]:
+    """Implements the Bidirectional Search algorithm for pathfinding.
+    
+    Bidirectional Search performs two simultaneous breadth-first searches - one from the start
+    node and one from the goal node. The algorithm terminates when the two searches meet at
+    an intersection point. This approach can be significantly faster than a single BFS as it
+    reduces the search space by exploring from both ends.
+    
+    Args:
+        start (Pair): Starting position coordinates (x, y)
+        end (Pair): Goal position coordinates (x, y)
+        blocks (List[List[bool]]): 2D grid representing obstacles (True for blocked cells)
+        size (int): Size of the grid (assuming square grid)
+        directions (int): Number of possible movement directions (4 or 8)
+        dx (List[int]): List of x-direction movements
+        dy (List[int]): List of y-direction movements
+    
+    Returns:
+        Dict[str, Any]: A dictionary containing:
+            - path: List of Pair objects representing the found path, or None if no path exists
+            - exploration_order: List of coordinates showing the order of exploration
+            - metrics: Dictionary containing performance metrics:
+                - explored_size: Total number of nodes explored in both directions
+                - frontier_size: Total size of both forward and backward frontiers
+                - time_taken_ms: Time taken to find the path in milliseconds
+                - path_length: Length of the found path (0 if no path found)
+    """
     # Special case: if start and end are the same
     if start.first == end.first and start.second == end.second:
         return {
@@ -91,14 +117,15 @@ def bidirectional_search(start: Pair, end: Pair, blocks: List[List[bool]], size:
             path_forward.insert(0, current)
             current = parent_forward[current.first][current.second]
         
-        # Reconstruct path from intersection to end (excluding intersection to avoid duplication)
+        # Reconstruct path from intersection to end (excluding intersection)
         path_backward = []
         current = parent_backward[intersection.first][intersection.second]
         while current.first != -1:
-            path_backward.append(current)
+            path_backward.insert(0, current)  # Insert at beginning to properly reverse
             current = parent_backward[current.first][current.second]
         
-        # Combine paths
+        # Reverse the backward path and append to forward path
+        path_backward.reverse()
         path = path_forward + path_backward
         path_length = len(path) - 1  # Subtract 1 to not count the start node
         

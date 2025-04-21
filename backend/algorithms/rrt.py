@@ -5,6 +5,13 @@ from utils import Pair
 import time
 
 class Node:
+    """A node in the RRT tree representing a position in the maze.
+    
+    Attributes:
+        x (int): The x-coordinate of the node
+        y (int): The y-coordinate of the node
+        parent (Optional[Node]): The parent node in the RRT tree, None if root node
+    """
     def __init__(self, x: int, y: int, parent: Optional['Node'] = None):
         self.x = x
         self.y = y
@@ -22,6 +29,34 @@ def rrt(
     max_iterations: int = 1000,
     goal_sample_rate: float = 0.1
 ) -> Dict[str, Any]:
+    """Implements the Rapidly-exploring Random Tree (RRT) algorithm for path planning.
+    
+    This algorithm builds a tree of possible paths by randomly sampling points in the space
+    and connecting them to the nearest existing node in the tree. It's particularly effective
+    for path planning in continuous spaces with obstacles.
+    
+    Args:
+        start (Pair): Starting position coordinates (x, y)
+        end (Pair): Goal position coordinates (x, y)
+        blocks (List[List[bool]]): 2D grid representing obstacles (True for blocked cells)
+        size (int): Size of the grid (assuming square grid)
+        directions (int): Number of possible movement directions (4 or 8)
+        dx (List[int]): List of x-direction movements
+        dy (List[int]): List of y-direction movements
+        step_size (float, optional): Maximum distance to move in one step. Defaults to 1.0
+        max_iterations (int, optional): Maximum number of iterations to attempt. Defaults to 1000
+        goal_sample_rate (float, optional): Probability of sampling the goal position. Defaults to 0.1
+    
+    Returns:
+        Dict[str, Any]: A dictionary containing:
+            - path: List of Pair objects representing the found path
+            - exploration_order: List of coordinates showing the order of exploration
+            - metrics: Dictionary containing performance metrics:
+                - explored_size: Number of nodes explored
+                - frontier_size: Size of the frontier (always 0 for RRT)
+                - time_taken_ms: Time taken to find the path in milliseconds
+                - path_length: Length of the found path
+    """
     start_time = time.time()
     exploration_order = []
     metrics = {
