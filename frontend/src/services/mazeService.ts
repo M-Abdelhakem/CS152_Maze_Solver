@@ -7,10 +7,12 @@ export interface SolveRequest {
   start: [number, number];
   end: [number, number];
   blocks: boolean[][];
+  weights?: number[][];  // Optional weights for each cell
   size: number;
   directions: number;
   algorithm: string;
   heuristic_type?: number;
+  is_weighted?: boolean;  // Flag to indicate if weights should be used
 }
 
 export interface SolveResponse {
@@ -22,6 +24,7 @@ export interface SolveResponse {
     frontier_size: number;
     time_taken_ms: number;
     path_length: number;
+    total_cost: number;
   };
 }
 
@@ -53,6 +56,7 @@ export async function solveMaze(request: SolveRequest): Promise<SolveResponse> {
         frontier_size: 0,
         time_taken_ms: 0,
         path_length: 0,
+        total_cost: 0,
       },
     };
   }

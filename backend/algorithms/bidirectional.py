@@ -39,7 +39,8 @@ def bidirectional_search(start: Pair, end: Pair, blocks: List[List[bool]], size:
                 "explored_size": 1,
                 "frontier_size": 0,
                 "time_taken_ms": 0,
-                "path_length": 0
+                "path_length": 0,
+                "total_cost": 0
             }
         }
     
@@ -113,8 +114,11 @@ def bidirectional_search(start: Pair, end: Pair, blocks: List[List[bool]], size:
         # Reconstruct path from start to intersection
         path_forward = []
         current = intersection
+        total_cost = 0
         while current.first != -1:
             path_forward.insert(0, current)
+            if parent_forward[current.first][current.second].first != -1:
+                total_cost += 1  # Each step has a cost of 1
             current = parent_forward[current.first][current.second]
         
         # Reconstruct path from intersection to end (excluding intersection)
@@ -122,6 +126,8 @@ def bidirectional_search(start: Pair, end: Pair, blocks: List[List[bool]], size:
         current = parent_backward[intersection.first][intersection.second]
         while current.first != -1:
             path_backward.insert(0, current)  # Insert at beginning to properly reverse
+            if parent_backward[current.first][current.second].first != -1:
+                total_cost += 1  # Each step has a cost of 1
             current = parent_backward[current.first][current.second]
         
         # Reverse the backward path and append to forward path
@@ -136,7 +142,8 @@ def bidirectional_search(start: Pair, end: Pair, blocks: List[List[bool]], size:
                 "explored_size": explored_size,
                 "frontier_size": frontier_size,
                 "time_taken_ms": time_taken_ms,
-                "path_length": path_length
+                "path_length": path_length,
+                "total_cost": total_cost
             }
         }
     
@@ -148,6 +155,7 @@ def bidirectional_search(start: Pair, end: Pair, blocks: List[List[bool]], size:
             "explored_size": explored_size,
             "frontier_size": frontier_size,
             "time_taken_ms": time_taken_ms,
-            "path_length": 0
+            "path_length": 0,
+            "total_cost": 0
         }
     } 

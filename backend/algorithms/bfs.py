@@ -36,7 +36,8 @@ def bfs(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions:
                 "explored_size": 1,
                 "frontier_size": 0,
                 "time_taken_ms": 0,
-                "path_length": 0
+                "path_length": 0,
+                "total_cost": 0
             }
         }
     
@@ -53,8 +54,11 @@ def bfs(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions:
         if current.first == end.first and current.second == end.second:
             # Reconstruct path
             path = []
+            total_cost = 0
             while current.first != -1:
                 path.insert(0, current)
+                if parent[current.first][current.second].first != -1:
+                    total_cost += 1  # Each step has a cost of 1
                 current = parent[current.first][current.second]
             
             # Calculate metrics
@@ -70,7 +74,8 @@ def bfs(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions:
                     "explored_size": explored_size,
                     "frontier_size": frontier_size,
                     "time_taken_ms": time_taken_ms,
-                    "path_length": path_length
+                    "path_length": path_length,
+                    "total_cost": total_cost
                 }
             }
         
@@ -94,6 +99,7 @@ def bfs(start: Pair, end: Pair, blocks: List[List[bool]], size: int, directions:
             "explored_size": explored_size,
             "frontier_size": frontier_size,
             "time_taken_ms": time_taken_ms,
-            "path_length": 0
+            "path_length": 0,
+            "total_cost": 0
         }
     } 

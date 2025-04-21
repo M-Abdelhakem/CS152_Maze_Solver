@@ -37,7 +37,8 @@ def iterative_deepening(start: Pair, end: Pair, blocks: List[List[bool]], size: 
                 "explored_size": 1,
                 "frontier_size": 0,
                 "time_taken_ms": 0,
-                "path_length": 0
+                "path_length": 0,
+                "total_cost": 0
             }
         }
     
@@ -92,8 +93,11 @@ def iterative_deepening(start: Pair, end: Pair, blocks: List[List[bool]], size: 
             # Path found, reconstruct it
             path = []
             current = end
+            total_cost = 0
             while current.first != -1:
                 path.insert(0, current)
+                if parent[current.first][current.second].first != -1:
+                    total_cost += 1  # Each step has a cost of 1
                 current = parent[current.first][current.second]
             
             # Calculate metrics
@@ -111,7 +115,8 @@ def iterative_deepening(start: Pair, end: Pair, blocks: List[List[bool]], size: 
                     "explored_size": explored_size,
                     "frontier_size": 0,  # No frontier in IDDFS
                     "time_taken_ms": time_taken_ms,
-                    "path_length": path_length
+                    "path_length": path_length,
+                    "total_cost": total_cost
                 }
             }
         
@@ -129,6 +134,7 @@ def iterative_deepening(start: Pair, end: Pair, blocks: List[List[bool]], size: 
             "explored_size": total_explored,
             "frontier_size": 0,
             "time_taken_ms": time_taken_ms,
-            "path_length": 0
+            "path_length": 0,
+            "total_cost": 0
         }
     } 
