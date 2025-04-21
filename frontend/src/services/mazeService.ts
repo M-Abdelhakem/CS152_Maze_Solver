@@ -1,4 +1,4 @@
-import { Pair } from '../helpers/types';
+import { Pair } from '../utils';
 
 export const API_URL = 'http://3.147.27.202:8000';  // for deployment on vercel
 // export const API_URL = 'http://localhost:8000';  // for local development

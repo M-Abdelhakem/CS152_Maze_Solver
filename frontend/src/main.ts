@@ -8,8 +8,9 @@ import {
 import {
   Pair,
   sleep,
-} from "./helpers"
-import { make2dArray } from "./helpers"
+  make2dArray,
+  setCellColor
+} from "./utils"
 import "./style.css"
 import { solveMaze } from './services/mazeService';
 
