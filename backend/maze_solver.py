@@ -11,6 +11,7 @@ from algorithms.bidirectional import bidirectional_search
 from algorithms.local_beam import local_beam_search
 from algorithms.rrt import rrt
 from algorithms.greedy_best_first import greedy_best_first
+from algorithms.ucs import ucs
 
 # Re-export all algorithms and types
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     'bidirectional_search',
     'local_beam_search',
     'rrt',
-    'greedy_best_first'
+    'greedy_best_first',
+    'ucs'
 ] 

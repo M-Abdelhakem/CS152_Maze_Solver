@@ -25,7 +25,8 @@ const algorithmNames: { [key: string]: string } = {
   'bidirectional': 'Bidirectional',
   'local_beam': 'Local Beam',
   'rrt': 'RRT',
-  'greedy_best_first': 'Greedy Best-First'
+  'greedy_best_first': 'Greedy Best-First',
+  'ucs': 'UCS'
 };
 
 let grid = document.getElementById("grid"),
@@ -34,7 +35,7 @@ let grid = document.getElementById("grid"),
   startBtn = document.getElementById("start")
 
 let mode: "blocks" | "target" | "location" | "weights" = "blocks",
-  algorithm: "bfs" | "dfs" | "dijkstra" | "astar" | "iterative_deepening" | "bidirectional" | "local_beam" | "rrt" | "greedy_best_first" = "bfs"
+  algorithm: "bfs" | "dfs" | "dijkstra" | "astar" | "iterative_deepening" | "bidirectional" | "local_beam" | "rrt" | "greedy_best_first" | "ucs" = "bfs"
 
 function main(size = DEFAULT_SIZE) {
   const blocks = make2dArray(size, false)
@@ -403,6 +404,7 @@ function main(size = DEFAULT_SIZE) {
       | "bidirectional"
       | "local_beam"
       | "rrt"
+      | "ucs"
 
     // show the a* options and remove them if not selected
     if (algorithm === "astar" || algorithm === "greedy_best_first") {
@@ -589,6 +591,10 @@ function main(size = DEFAULT_SIZE) {
       case 'greedy_best_first':
         timeComplexity = 'O(n log n) where n is the number of cells';
         spaceComplexity = 'O(n) where n is the number of cells';
+        break;
+      case 'ucs':
+        timeComplexity = 'O(b^d) where b is branching factor and d is depth';
+        spaceComplexity = 'O(b) where b is branching factor';
         break;
     }
     

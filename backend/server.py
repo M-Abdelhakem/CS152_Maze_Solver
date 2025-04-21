@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from maze_solver import Pair, bfs, dfs, dijkstra, astar, iterative_deepening, bidirectional_search, local_beam_search, rrt, greedy_best_first
+from maze_solver import Pair, bfs, dfs, dijkstra, astar, iterative_deepening, bidirectional_search, local_beam_search, rrt, greedy_best_first, ucs
 
 app = FastAPI()
 
@@ -67,6 +67,8 @@ async def solve_maze(request: SolveRequest):
             result = rrt(start, end, request.blocks, request.size, request.directions, dx, dy)
         elif request.algorithm == "greedy_best_first":
             result = greedy_best_first(start, end, request.blocks, request.size, request.directions, dx, dy, request.heuristic_type, request.weights, request.is_weighted)
+        elif request.algorithm == "ucs":
+            result = ucs(start, end, request.blocks, request.size, request.directions, dx, dy, request.weights, request.is_weighted)
         
         if result["path"] is None:
             return SolveResponse(
