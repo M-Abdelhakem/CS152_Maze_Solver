@@ -135,6 +135,17 @@ function main(size = DEFAULT_SIZE) {
   
   // Move the grid and options into the container
   const optionsContainer = document.getElementById('options')!;
+  
+  // Clean up existing weighted toggle and controls if they exist
+  const existingWeightedToggle = document.getElementById('weighted-toggle');
+  const existingWeightControls = document.getElementById('weight-controls');
+  if (existingWeightedToggle) {
+    existingWeightedToggle.parentElement?.remove();
+  }
+  if (existingWeightControls) {
+    existingWeightControls.remove();
+  }
+  
   mazeContainer.appendChild(optionsContainer);
   mazeContainer.appendChild(grid!);
   
